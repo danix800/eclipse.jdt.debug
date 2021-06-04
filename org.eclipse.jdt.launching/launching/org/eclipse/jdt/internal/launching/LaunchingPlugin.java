@@ -408,12 +408,22 @@ public class LaunchingPlugin extends Plugin implements DebugOptionsListener, IEc
 
 	}
 
+	// Launches listener
+	private LaunchListener fLaunchListener;
+
 	/**
 	 * Constructor
 	 */
 	public LaunchingPlugin() {
 		super();
 		fgLaunchingPlugin = this;
+	}
+
+	public LaunchListener getLaunchListener() {
+		if (fLaunchListener == null) {
+			fLaunchListener = new LaunchListener();
+		}
+		return fLaunchListener;
 	}
 
 	/**
@@ -533,6 +543,10 @@ public class LaunchingPlugin extends Plugin implements DebugOptionsListener, IEc
 	@Override
 	public void stop(BundleContext context) throws Exception {
 		try {
+			if (fLaunchListener != null) {
+				fLaunchListener.shutdown();
+			}
+
 			AdvancedSourceLookupSupport.stop();
 
 			DebugPlugin.getDefault().getLaunchManager().removeLaunchListener(this);

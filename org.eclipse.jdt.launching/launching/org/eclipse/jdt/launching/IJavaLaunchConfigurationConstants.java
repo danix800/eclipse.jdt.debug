@@ -99,6 +99,22 @@ public interface IJavaLaunchConfigurationConstants {
 	public static final String ATTR_STOP_IN_MAIN = LaunchingPlugin.getUniqueIdentifier() + ".STOP_IN_MAIN";	 //$NON-NLS-1$
 
 	/**
+	 * Launch configuration attribute key. The value is a boolean specifying
+	 * whether to relaunch on exit code. The default value is <code>false</code>.
+	 *
+	 * @since 3.19
+	 */
+	public static final String ATTR_RELAUNCH_ON_EXIT_CODE = LaunchingPlugin.getUniqueIdentifier() + ".RELAUNCH_ON_EXIT_CODE"; //$NON-NLS-1$
+
+	/**
+	 * Launch configuration attribute key. The value is an integer exit code
+	 * for relaunching. The default value is <code>194</code>.
+	 *
+	 * @since 3.19
+	 */
+	public static final String ATTR_RELAUNCH_EXIT_CODE = LaunchingPlugin.getUniqueIdentifier() + ".RELAUNCH_EXIT_CODE"; //$NON-NLS-1$
+
+	/**
 	 * Launch configuration attribute key. The value is a string specifying
 	 * program arguments for a Java launch configuration, as they should appear
 	 * on the command line.
@@ -607,4 +623,11 @@ public interface IJavaLaunchConfigurationConstants {
 	 * @see org.eclipse.jdt.internal.launching.SocketListenConnectorProcess
 	 */
 	public static final int DETAIL_CONFIG_READY_TO_ACCEPT_REMOTE_VM_CONNECTION = 1001;
+
+	/**
+	 * Exit code for relaunch.
+	 *
+	 * @since 3.19
+	 */
+	public static final int DEFAULT_RELAUNCH_EXIT_CODE = 194;
 }

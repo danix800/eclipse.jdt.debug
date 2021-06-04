@@ -45,11 +45,14 @@ import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.window.Window;
 import org.eclipse.osgi.util.NLS;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
 /**
@@ -85,6 +88,8 @@ public class JavaMainTab extends SharedJavaMainTab {
 	private Button fSearchExternalJarsCheckButton;
 	private Button fConsiderInheritedMainButton;
 	private Button fStopInMainCheckButton;
+	private Button fRelaunchOnExitcodeCheckButton;
+	private Text fRelaunchExitCodeText;
 
 	/* (non-Javadoc)
 	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#createControl(org.eclipse.swt.widgets.Composite)
@@ -111,8 +116,18 @@ public class JavaMainTab extends SharedJavaMainTab {
 		fConsiderInheritedMainButton = SWTFactory.createCheckButton(parent, LauncherMessages.JavaMainTab_22, null, false, 2);
 		fConsiderInheritedMainButton.addSelectionListener(getDefaultListener());
 
-		fStopInMainCheckButton = SWTFactory.createCheckButton(parent, LauncherMessages.JavaMainTab_St_op_in_main_1, null, false, 1);
+		fStopInMainCheckButton = SWTFactory.createCheckButton(parent, LauncherMessages.JavaMainTab_St_op_in_main_1, null, false, 2);
 		fStopInMainCheckButton.addSelectionListener(getDefaultListener());
+
+		fRelaunchOnExitcodeCheckButton = SWTFactory.createCheckButton(parent, LauncherMessages.JavaMainTab_Relaunch_on_exit_code, null, false, 1);
+		fRelaunchOnExitcodeCheckButton.addSelectionListener(getDefaultListener());
+		fRelaunchExitCodeText = SWTFactory.createSingleText(parent, 1);
+		fRelaunchExitCodeText.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				updateLaunchConfigurationDialog();
+			}
+		});
 	}
 
 	/* (non-Javadoc)
@@ -203,6 +218,7 @@ public class JavaMainTab extends SharedJavaMainTab {
 		super.initializeFrom(config);
 		updateMainTypeFromConfig(config);
 		updateStopInMainFromConfig(config);
+		updateRelaunchOnExitCode(config);
 		updateInheritedMainsFromConfig(config);
 		updateExternalJars(config);
 	}
@@ -242,6 +258,17 @@ public class JavaMainTab extends SharedJavaMainTab {
 			setErrorMessage(LauncherMessages.JavaMainTab_Main_type_not_specified_16);
 			return false;
 		}
+		String exitCode = fRelaunchExitCodeText.getText().trim();
+		if (exitCode.length() == 0) {
+			setErrorMessage(LauncherMessages.javaMainTab_Invalid_exit_code);
+			return false;
+		}
+		try {
+			Integer.parseInt(exitCode);
+		} catch (NumberFormatException e) {
+			setErrorMessage(LauncherMessages.javaMainTab_Invalid_exit_code);
+			return false;
+		}
 		return true;
 	}
 
@@ -261,6 +288,22 @@ public class JavaMainTab extends SharedJavaMainTab {
 		}
 		else {
 			config.setAttribute(IJavaLaunchConfigurationConstants.ATTR_STOP_IN_MAIN, (String)null);
+		}
+
+		if (fRelaunchOnExitcodeCheckButton.getSelection()) {
+			config.setAttribute(IJavaLaunchConfigurationConstants.ATTR_RELAUNCH_ON_EXIT_CODE, true);
+		}
+		else {
+			config.setAttribute(IJavaLaunchConfigurationConstants.ATTR_RELAUNCH_ON_EXIT_CODE, (String) null);
+		}
+
+		if (fRelaunchExitCodeText.isEnabled()) {
+			int exitCode = IJavaLaunchConfigurationConstants.DEFAULT_RELAUNCH_EXIT_CODE;
+			try {
+				exitCode = Integer.parseInt(fRelaunchExitCodeText.getText());
+			} catch (NumberFormatException e) {
+			}
+			config.setAttribute(IJavaLaunchConfigurationConstants.ATTR_RELAUNCH_EXIT_CODE, exitCode);
 		}
 
 		// attribute added in 2.1, so null must be used instead of false for backwards compatibility
@@ -305,6 +348,7 @@ public class JavaMainTab extends SharedJavaMainTab {
 		super.initializeAttributes();
 		getAttributesLabelsForPrototype().put(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, LauncherMessages.SharedJavaMainTab_AttributeLabel_MainTypeName);
 		getAttributesLabelsForPrototype().put(IJavaLaunchConfigurationConstants.ATTR_STOP_IN_MAIN, LauncherMessages.JavaMainTab_AttributeLabel_StopInMain);
+		getAttributesLabelsForPrototype().put(IJavaLaunchConfigurationConstants.ATTR_RELAUNCH_ON_EXIT_CODE, LauncherMessages.JavaMainTab_AttributeLabel_RelaunchOnExitCode);
 		getAttributesLabelsForPrototype().put(JavaMainTab.ATTR_INCLUDE_EXTERNAL_JARS, LauncherMessages.JavaMainTab_AttributeLabel_IncludeExternalJars);
 		getAttributesLabelsForPrototype().put(JavaMainTab.ATTR_CONSIDER_INHERITED_MAIN, LauncherMessages.JavaMainTab_AttributeLabel_InheritedMain);
 	}
@@ -346,6 +390,30 @@ public class JavaMainTab extends SharedJavaMainTab {
 		}
 		catch (CoreException e) {JDIDebugUIPlugin.log(e);}
 		fStopInMainCheckButton.setSelection(stop);
+	}
+
+	/**
+	 * updates the relaunch on exit code attribute from the specified launch config
+	 *
+	 * @param config
+	 *            the config to load the stop in main attribute from
+	 */
+	private void updateRelaunchOnExitCode(ILaunchConfiguration config) {
+		boolean relaunchOnExitcode = false;
+		try {
+			relaunchOnExitcode = config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_RELAUNCH_ON_EXIT_CODE, false);
+		} catch (CoreException e) {
+			JDIDebugUIPlugin.log(e);
+		}
+		fRelaunchOnExitcodeCheckButton.setSelection(relaunchOnExitcode);
+
+		int exitcode = IJavaLaunchConfigurationConstants.DEFAULT_RELAUNCH_EXIT_CODE;
+		try {
+			exitcode = config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_RELAUNCH_EXIT_CODE, IJavaLaunchConfigurationConstants.DEFAULT_RELAUNCH_EXIT_CODE);
+		} catch (CoreException e) {
+			JDIDebugUIPlugin.log(e);
+		}
+		fRelaunchExitCodeText.setText(exitcode + ""); //$NON-NLS-1$
 	}
 
 }

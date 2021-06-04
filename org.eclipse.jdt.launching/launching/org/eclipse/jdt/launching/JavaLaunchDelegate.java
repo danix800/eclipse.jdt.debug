@@ -25,6 +25,7 @@ import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IModuleDescription;
 import org.eclipse.jdt.internal.launching.LaunchingMessages;
+import org.eclipse.jdt.internal.launching.LaunchingPlugin;
 import org.eclipse.jdt.launching.sourcelookup.advanced.AdvancedJavaLaunchDelegate;
 import org.eclipse.osgi.util.NLS;
 
@@ -161,6 +162,7 @@ public class JavaLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate 
 			if (runConfig == null) {
 				return;
 			}
+			LaunchingPlugin.getDefault().getLaunchListener().manage(launch);
 			// stop in main
 			prepareStopInMain(configuration);
 
